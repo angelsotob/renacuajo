@@ -1,2 +1,2 @@
-# renacuajo
-Proyecto de sotware para el printbot renacuajo de bq
+# Renacuajo
+Proyecto de software para el printbot renacuajo de bq
