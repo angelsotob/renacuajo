@@ -40,6 +40,7 @@
 #define pinRightWheel   9
 #define pinLeftIR       2
 #define pinRightIR      3
+#define pinButton       4     // The button is active down
 
 /* Definition of the values ​​that can take continuous rotation servo,
  that is, the wheels */
@@ -53,6 +54,9 @@
 Servo leftWheel;
 Servo rightWheel;
 
+/* Variables */
+int buttonState = 1;
+
 /******************************************************************
  *                     Definition of functions                    *
  ******************************************************************/
@@ -64,7 +68,40 @@ void stopWheels() {
   rightWheel.write(wheelStopValue);
   delay(10);
 }
- 
+
+void moveForwards() {
+  leftWheel.write(leftWheelForwardValue);
+  delay(10);
+  
+  rightWheel.write(rightWheelForwardValue);
+  delay(10);
+}
+
+void moveBackwards() {
+  leftWheel.write(leftWheelBackwardsValue);
+  delay(10);
+  
+  rightWheel.write(rightWheelBackwardsValue);
+  delay(10);
+}
+
+void moveLeft() {
+  leftWheel.write(wheelStopValue);
+  delay(10);
+  
+  rightWheel.write(rightWheelForwardValue);
+  delay(10);
+}
+
+void moveRight() {
+  leftWheel.write(leftWheelForwardValue);
+  delay(10);
+  
+  rightWheel.write(wheelStopValue);
+  delay(10);
+}
+
+
 /******************************************************************
  *                             Setup                              *
  ******************************************************************/
@@ -84,34 +121,37 @@ void setup() {
 
 void loop() {
 
+  buttonState = digitalRead(pinButton);
+
+  if (buttonState == 0) {
+  
   delay(2000);
 
-  leftWheel.write(leftWheelForwardValue);       // Moverse adelante
-  rightWheel.write(rightWheelForwardValue);
+  moveForwards();
   delay(2000);
 
   stopWheels();
 
   delay(1000);
 
-  leftWheel.write(leftWheelForwardValue);       // Girar a derechas
+  moveRight();
   delay(2000);
   
   stopWheels();
 
   delay(1000);
   
-  leftWheel.write(leftWheelBackwardsValue);     // Moverse atrás
-  rightWheel.write(rightWheelBackwardsValue);
+  moveBackwards();
   delay(2000);
 
   stopWheels();
 
   delay(1000);
 
-  rightWheel.write(rightWheelForwardValue);     // Girar a izquierdas
+  moveLeft();
   delay(2000);
   
   stopWheels();
+  }
   
 }
