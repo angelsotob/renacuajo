@@ -29,6 +29,7 @@
  ******************************************************************/ 
 
 #include <Servo.h>
+#include <SoftwareSerial.h>
 
 
 /******************************************************************
@@ -66,10 +67,14 @@
 Servo leftWheel;
 Servo rightWheel;
 
+/* A object from SoftwareSerial is created for the Bluetooth module */
+SoftwareSerial BT(1, 0);    // Rx and Tx of the board
+
 /* Variables */
 bool buttonState = true;
 int numTones = 7;
 int tones[ ] = {261, 294, 330, 349, 392, 440, 494};
+String B = ".";
 
 /* Variables of the line follower */
 int rightIR;
@@ -184,6 +189,19 @@ void happyBirthday(){
   noTone(pinBuzzer);
 }
 
+String GetLineBT() {
+  String S = "" ;
+  if (BT.available()){
+    char c = BT.read();
+    while ( c != '\r' ) {
+      S = S + c;
+      delay(25);
+      c = BT.read();
+    }
+    return ( S );
+  }
+}
+
 
 /******************************************************************
  *                             Setup                              *
@@ -196,6 +214,8 @@ void setup() {
   rightWheel.attach(pinRightWheel);
 
   stopWheels();
+
+  BT.begin(9600);
 
   /* Buzzer test subroutine
   delay(5000);
@@ -210,7 +230,8 @@ void setup() {
 
   
 
-  happyBirthday();
+//  happyBirthday();
+
 }
 
 
@@ -223,28 +244,43 @@ void loop() {
     rightIR = digitalRead(pinRightIR);
     leftIR = digitalRead(pinLeftIR);
 
-    if (buttonState) {
-      buttonState = digitalRead(pinButton);
+    if (BT.available()){
+      B = GetLineBT();
     }
-    else{                                           // Main routine. Only executed
-     if (rightIR == BLACK){                         // after pressing the button.
-        leftWheel.write(leftWheelForwardValue);
-        delay(10);
-        if (leftIR == WHITE){
-          rightWheel.write(wheelStopValue);
-          delay(10);
-        }
-        else {
-          rightWheel.write(rightWheelForwardValue);
-          delay(10);
-        }
-        delay(50);
-      }
-      else {
-        moveLeft();
-        delay(50);
-      }
+
+    if (B=="W"){
+      moveForwards();
+      delay(200);
     }
+    
+
+
+
+
+
+
+//    if (buttonState) {
+//      buttonState = digitalRead(pinButton);
+//    }
+//    else{                                           // Main routine. Only executed
+//     if (rightIR == BLACK){                         // after pressing the button.
+//        leftWheel.write(leftWheelForwardValue);
+//        delay(10);
+//        if (leftIR == WHITE){
+//          rightWheel.write(wheelStopValue);
+//          delay(10);
+//        }
+//        else {
+//          rightWheel.write(rightWheelForwardValue);
+//          delay(10);
+//        }
+//        delay(50);
+//      }
+//      else {
+//        moveLeft();
+//        delay(50);
+//      }
+//    }
     
     
 
