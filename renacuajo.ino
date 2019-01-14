@@ -1,14 +1,14 @@
 /*
-
  *     ********************************************************
  *     ********************************************************
  *     ***                                                  ***
  *     ***                  Renacuajo                       ***
  *     ***                                                  ***
+ *     ******************************************************** 
  *     ********************************************************
- *     ********************************************************
-
-      Arduino code for the renacuajo robot.
+ *
+ *    Arduino code for the renacuajo robot.
+ *     
 
  *   ****************************************************
  *   * Fecha: 11/01/2019                                *
@@ -16,7 +16,8 @@
  *   * Mail: angelsotob@outlook.es                      *
  *   * Licencia: MIT License                            *
  *   ****************************************************
-*/
+ */
+
 
 /******************************************************************/
 /******************************************************************/
@@ -25,14 +26,15 @@
 
 
 /******************************************************************
-                             Libraries
- ******************************************************************/
+ *                           Libraries                            *
+ ******************************************************************/ 
 
 #include <Servo.h>
+#include <SoftwareSerial.h>
 
 
 /******************************************************************
-                      Definition of variables
+ *                    Definition of variables                     *
  ******************************************************************/
 
 /* Pin definition of the board to be used */
@@ -43,7 +45,7 @@
 #define pinButton       4     // The button is active down
 #define pinBuzzer       13
 
-/* Definition of the values ​​that can take continuous rotation servo,
+/* Definition of the values that can take continuous rotation servo,
   that is, the wheels */
 #define wheelStopValue            90
 #define leftWheelForwardValue     0
@@ -98,14 +100,20 @@ int happyBirthdayDuracion [ ] = {450, 150, 600, 600, 600, 1200,
                                  450, 150, 600, 600, 600, 1200
                                 };
 
+
 /* A object from Servo class is created for each servo */
 Servo leftWheel;
 Servo rightWheel;
+
+/* A object from SoftwareSerial is created for the Bluetooth module */
+SoftwareSerial BT(1, 0);    // Rx and Tx of the board
 
 /* Variables */
 bool buttonState = true;
 int numTones = 7;
 int tones[ ] = {261, 294, 330, 349, 392, 440, 494};
+String B = ".";
+
 
 /* Variables of the line follower */
 int rightIR;
@@ -114,7 +122,7 @@ int BLACK = 0;
 int WHITE = 1;
 
 /******************************************************************
-                       Definition of functions
+ *                     Definition of functions                    *
  ******************************************************************/
 
 void stopWheels() {
@@ -182,24 +190,40 @@ void silencioBlanca (int pin) {
   silencioNegra(pin);
   silencioNegra(pin);
 }
+
+String GetLineBT() {
+  String S = "" ;
+  if (BT.available()){
+    char c = BT.read();
+    while ( c != '\r' ) {
+      S = S + c;
+      delay(25);
+      c = BT.read();
+    }
+    return ( S );
+  }
+}
+
 /******************************************************************
                                Setup
  ******************************************************************/
 
 void setup() {
-
+  
   pinMode(pinBuzzer, OUTPUT);
   leftWheel.attach(pinLeftWheel);
   rightWheel.attach(pinRightWheel);
 
+  BT.begin(9600);
+  
   stopWheels();
 
   delay(5000);
 
   harryPotter();
   happyBirthday();
+  
 }
-
 
 /******************************************************************
                          Main program loop
@@ -209,6 +233,15 @@ void loop() {
 
   rightIR = digitalRead(pinRightIR);
   leftIR = digitalRead(pinLeftIR);
+  
+    if (BT.available()){
+      B = GetLineBT();
+    }
+
+    if (B=="W"){
+      moveForwards();
+      delay(200);
+    }
 
   if (buttonState) {
     buttonState = digitalRead(pinButton);
