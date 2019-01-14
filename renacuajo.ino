@@ -30,7 +30,6 @@
  ******************************************************************/
 
 #include <Servo.h>
-#include <SoftwareSerial.h>
 
 
 /******************************************************************
@@ -44,6 +43,9 @@
 #define pinRightIR      3
 #define pinButton       4     // The button is active down
 #define pinBuzzer       13
+
+/* Bluetooth */
+#define bufferSize 1
 
 /* Definition of the values that can take continuous rotation servo,
   that is, the wheels */
@@ -106,14 +108,18 @@ Servo leftWheel;
 Servo rightWheel;
 
 /* A object from SoftwareSerial is created for the Bluetooth module */
-SoftwareSerial BT(1, 0);    // Rx and Tx of the board
+//SoftwareSerial BT(1, 0);    // Rx and Tx of the board
 
 /* Variables */
 bool buttonState = true;
 int numTones = 7;
 int tones[ ] = {261, 294, 330, 349, 392, 440, 494};
-String BTmsg = ".";
+bool caida = false;
 
+/* Bluetooth variables */
+char dataBuffer [bufferSize];
+int numChar = 0;
+int i = 0;
 
 /* Variables of the line follower */
 int rightIR;
@@ -140,7 +146,8 @@ void moveForwards() {
 void moveBackwards() {
   leftWheel.write(leftWheelBackwardsValue);
   rightWheel.write(rightWheelBackwardsValue);
-  delay(10);
+  delay(70);
+  caida = false;
 }
 
 void moveLeft() {
@@ -153,6 +160,15 @@ void moveRight() {
   leftWheel.write(leftWheelForwardValue);
   rightWheel.write(wheelStopValue);
   delay(10);
+}
+
+void anticaidas(){
+  if (caida == false){
+    if (rightIR == BLACK && leftIR == BLACK) {
+    stopWheels();
+    caida = true;
+    }
+  }
 }
 
 void happyBirthday() {
@@ -189,17 +205,54 @@ void silencioBlanca (int pin) {
   silencioNegra(pin);
 }
 
-String GetLineBT() {
-  String S = "" ;
-  if (BT.available()) {
-    char c = BT.read();
-    while ( c != '\r' ) {
-      S = S + c;
-      delay(25);
-      c = BT.read();
+void linefollow() {
+  if (rightIR == BLACK) {
+    leftWheel.write(leftWheelForwardValue);
+    delay(10);
+    if (leftIR == WHITE) {
+      rightWheel.write(wheelStopValue);
+      delay(10);
     }
-    return ( S );
+    else {
+      rightWheel.write(rightWheelForwardValue);
+      delay(10);
+    }
+    delay(50);
   }
+  else {
+    moveLeft();
+    delay(50);
+  }
+}
+
+void setAction(char* data) {
+  switch (data[0]) {
+    case 'w':
+      moveForwards();
+      break;
+    case 'q':
+      stopWheels();
+      break;
+    case 'a':
+      moveLeft();
+      break;
+    case 'd':
+      moveRight();
+      break;
+    case 's':
+      moveBackwards();
+      break;
+    case 'h':
+      harryPotter();
+      break;
+    case 'p':
+      happyBirthday();
+      break;
+    case 'f':
+      linefollow();
+      break;
+  }
+  Serial.flush();
 }
 
 /******************************************************************
@@ -212,15 +265,10 @@ void setup() {
   leftWheel.attach(pinLeftWheel);
   rightWheel.attach(pinRightWheel);
 
-  BT.begin(9600);
+  Serial.begin(38400);
+  Serial.flush();
 
   stopWheels();
-
-  delay(5000);
-
-  harryPotter();
-  happyBirthday();
-
 }
 
 /******************************************************************
@@ -228,44 +276,34 @@ void setup() {
  ******************************************************************/
 
 void loop() {
-
+  
+  anticaidas();
+  
   rightIR = digitalRead(pinRightIR);
   leftIR = digitalRead(pinLeftIR);
 
   if (buttonState) {
     buttonState = digitalRead(pinButton);
   }
-  else {                                          // Main routine. Only executed
-    if (rightIR == BLACK) {                        // after pressing the button.
-      leftWheel.write(leftWheelForwardValue);
-      delay(10);
-      if (leftIR == WHITE) {
-        rightWheel.write(wheelStopValue);
-        delay(10);
-      }
-      else {
-        rightWheel.write(rightWheelForwardValue);
-        delay(10);
-      }
-      delay(50);
+  else {
+    linefollow();
+  }
+
+  if (Serial.available() > 0) {
+    i = 0;
+    memset(dataBuffer, 0, sizeof(dataBuffer));
+    delay(bufferSize);
+    numChar = Serial.available();
+    if (numChar > bufferSize) {
+      numChar = bufferSize;
     }
-    else {
-      moveLeft();
-      delay(50);
+    while (numChar--) {
+      dataBuffer[i++] = Serial.read();
+      delay(3);
     }
+    setAction(dataBuffer);
   }
 }
-
-/* Subrutina de atencion al Bluetooth
-if (BT.available()) {
-  BTmsg = GetLineBT();
-}
-
-if (BTmsg == "W") {
-  moveForwards();
-  delay(200);
-}
-*/
 
 /*  Movement test subroutine
   moveForwards();
